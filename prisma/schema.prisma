@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id                String    @id @default(cuid())
+  projectTitle      String
+  clientName        String
+  projectSource     String
+  projectUrl        String?
+  category          String
+  shortDescription  String
+  platform          String
+  status            String    @default("Pending")
+
+  proposedBudget    Float?
+  finalizedBudget   Float?
+  estimatedDuration String
+  deliveredDuration String?
+
+  startDate         DateTime
+  endDate           DateTime?
+
+  tagline           String?
+  proposal          String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  features          ProjectFeature[]
+  developers        ProjectDeveloper[]
+  screenshots       Screenshot[]
+  video             Video?
+}
+
+model Feature {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  createdAt   DateTime         @default(now())
+  projects    ProjectFeature[]
+}
+
+model ProjectFeature {
+  id        String   @id @default(cuid())
+  projectId String
+  featureId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  feature   Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, featureId])
+}
+
+model Developer {
+  id        String             @id @default(cuid())
+  name      String             @unique
+  createdAt DateTime           @default(now())
+  projects  ProjectDeveloper[]
+}
+
+model ProjectDeveloper {
+  id          String    @id @default(cuid())
+  projectId   String
+  developerId String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  developer   Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, developerId])
+}
+
+model Screenshot {
+  id        String   @id @default(cuid())
+  projectId String
+  fileName  String
+  filePath  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Video {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  fileName  String
+  filePath  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectSource {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Platform {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Status {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
