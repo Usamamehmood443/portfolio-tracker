@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { uploadToFTP, generateUniqueFilename } from '@/lib/ftp-upload';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,30 +31,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique filename
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileName = `${timestamp}-${originalName}`;
+    const fileName = generateUniqueFilename(file.name);
 
     // Determine folder based on type
     const folder = type === 'screenshot' ? 'screenshots' : 'videos';
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', folder);
+    const remotePath = `uploads/${folder}/${fileName}`;
 
-    // Ensure directory exists
-    if (!existsSync(uploadDir)) {
-      mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Convert file to buffer and save
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filePath = path.join(uploadDir, fileName);
 
-    await writeFile(filePath, buffer);
+    // Upload to FTP
+    const uploadResult = await uploadToFTP(buffer, remotePath);
+
+    if (!uploadResult.success) {
+      return NextResponse.json(
+        { success: false, error: uploadResult.error || 'Failed to upload file' },
+        { status: 500 }
+      );
+    }
 
     // Return file info
     const fileInfo = {
       fileName,
-      filePath: `/uploads/${folder}/${fileName}`,
+      filePath: uploadResult.url || '', // Full URL from Hostinger
       fileSize: file.size,
       mimeType: file.type,
     };
