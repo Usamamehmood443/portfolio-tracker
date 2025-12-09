@@ -3,11 +3,15 @@ import { uploadToFTP, generateUniqueFilename } from '@/lib/ftp-upload';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📤 Upload API called');
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string; // 'screenshot' or 'video'
 
+    console.log('📁 File:', file?.name, '| Type:', type, '| Size:', file?.size);
+
     if (!file) {
+      console.log('❌ No file provided');
       return NextResponse.json(
         { success: false, error: 'No file provided' },
         { status: 400 }
@@ -42,14 +46,18 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
 
     // Upload to FTP
+    console.log('🚀 Uploading to FTP:', remotePath);
     const uploadResult = await uploadToFTP(buffer, remotePath);
 
     if (!uploadResult.success) {
+      console.log('❌ FTP upload failed:', uploadResult.error);
       return NextResponse.json(
         { success: false, error: uploadResult.error || 'Failed to upload file' },
         { status: 500 }
       );
     }
+
+    console.log('✅ FTP upload successful:', uploadResult.url);
 
     // Return file info
     const fileInfo = {
@@ -58,6 +66,8 @@ export async function POST(request: NextRequest) {
       fileSize: file.size,
       mimeType: file.type,
     };
+
+    console.log('📤 Returning file info:', fileInfo);
 
     return NextResponse.json({
       success: true,

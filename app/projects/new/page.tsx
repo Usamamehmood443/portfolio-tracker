@@ -121,6 +121,7 @@ export default function NewProjectPage() {
   useEffect(() => {
     async function fetchDropdownOptions() {
       try {
+        console.log('🔄 Fetching dropdown options...');
         const [sourcesRes, categoriesRes, platformsRes, statusesRes, featuresRes, developersRes] = await Promise.all([
           fetch('/api/project-sources'),
           fetch('/api/categories'),
@@ -129,6 +130,8 @@ export default function NewProjectPage() {
           fetch('/api/features'),
           fetch('/api/developers'),
         ]);
+
+        console.log('📡 API responses received');
 
         const [sources, categories, platforms, statuses, features, developers] = await Promise.all([
           sourcesRes.json(),
@@ -139,14 +142,43 @@ export default function NewProjectPage() {
           developersRes.json(),
         ]);
 
-        if (sources.success) setProjectSources(sources.data.map((s: any) => s.name).filter(Boolean));
-        if (categories.success) setCategories(categories.data.map((c: any) => c.name).filter(Boolean));
-        if (platforms.success) setPlatforms(platforms.data.map((p: any) => p.name).filter(Boolean));
-        if (statuses.success) setStatuses(statuses.data.map((s: any) => s.name).filter(Boolean));
-        if (features.success) setFeatureSuggestions(features.data.map((f: any) => f.name).filter(Boolean));
-        if (developers.success) setDeveloperSuggestions(developers.data.map((d: any) => d.name).filter(Boolean));
+        console.log('📊 Parsed data:', {
+          sources: sources.success ? sources.data.length : 'failed',
+          categories: categories.success ? categories.data.length : 'failed',
+          platforms: platforms.success ? platforms.data.length : 'failed',
+          statuses: statuses.success ? statuses.data.length : 'failed',
+        });
+
+        console.log('🔍 Raw data sample:', {
+          firstSource: sources.success && sources.data[0] ? sources.data[0] : 'none',
+          firstCategory: categories.success && categories.data[0] ? categories.data[0] : 'none',
+        });
+
+        // API returns strings directly, not objects with name property
+        const newSources = sources.success ? sources.data.filter(Boolean) : [];
+        const newCategories = categories.success ? categories.data.filter(Boolean) : [];
+        const newPlatforms = platforms.success ? platforms.data.filter(Boolean) : [];
+        const newStatuses = statuses.success ? statuses.data.filter(Boolean) : [];
+        const newFeatures = features.success ? features.data.filter(Boolean) : [];
+        const newDevelopers = developers.success ? developers.data.filter(Boolean) : [];
+
+        console.log('📝 Setting state with values:', {
+          sources: newSources,
+          categories: newCategories,
+          platforms: newPlatforms,
+          statuses: newStatuses,
+        });
+
+        setProjectSources(newSources);
+        setCategories(newCategories);
+        setPlatforms(newPlatforms);
+        setStatuses(newStatuses);
+        setFeatureSuggestions(newFeatures);
+        setDeveloperSuggestions(newDevelopers);
+
+        console.log('✅ State updated');
       } catch (err) {
-        console.error('Error fetching dropdown options:', err);
+        console.error('❌ Error fetching dropdown options:', err);
       } finally {
         setLoading(false);
       }
@@ -158,44 +190,78 @@ export default function NewProjectPage() {
   // Form submission handler
   const onSubmit = async (data: ProjectFormValues) => {
     try {
-      const formData = new FormData();
+      // Step 1: Upload screenshots
+      const uploadedScreenshots = [];
+      for (const file of screenshots) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'screenshot');
 
-      // Add basic fields
-      formData.append('projectTitle', data.projectTitle);
-      formData.append('clientName', data.clientName);
-      formData.append('projectSource', data.projectSource);
-      formData.append('category', data.category);
-      formData.append('platform', data.platform);
-      formData.append('status', data.status);
-      formData.append('shortDescription', data.shortDescription);
-      formData.append('estimatedDuration', data.estimatedDuration);
-      formData.append('startDate', data.startDate);
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (data.projectUrl) formData.append('projectUrl', data.projectUrl);
-      if (data.deliveredDuration) formData.append('deliveredDuration', data.deliveredDuration);
-      if (data.endDate) formData.append('endDate', data.endDate);
-      if (data.proposedBudget) formData.append('proposedBudget', data.proposedBudget);
-      if (data.finalizedBudget) formData.append('finalizedBudget', data.finalizedBudget);
-      if (data.tagline) formData.append('tagline', data.tagline);
-      if (data.proposal) formData.append('proposal', data.proposal);
-
-      // Add arrays as JSON strings
-      formData.append('features', JSON.stringify(data.features));
-      formData.append('developers', JSON.stringify(data.developers));
-
-      // Add files
-      screenshots.forEach(file => {
-        formData.append('screenshots', file);
-      });
-
-      if (video.length > 0) {
-        formData.append('video', video[0]);
+        const uploadResult = await uploadResponse.json();
+        if (uploadResult.success) {
+          uploadedScreenshots.push(uploadResult.data);
+        } else {
+          toast.error(`Failed to upload ${file.name}`);
+          return;
+        }
       }
 
-      // Send create request
+      // Step 2: Upload video (if any)
+      let uploadedVideo = null;
+      if (video.length > 0) {
+        const formData = new FormData();
+        formData.append('file', video[0]);
+        formData.append('type', 'video');
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadResult = await uploadResponse.json();
+        if (uploadResult.success) {
+          uploadedVideo = uploadResult.data;
+        } else {
+          toast.error(`Failed to upload video`);
+          return;
+        }
+      }
+
+      // Step 3: Create project with uploaded file URLs
+      const projectData = {
+        projectTitle: data.projectTitle,
+        clientName: data.clientName,
+        projectSource: data.projectSource,
+        category: data.category,
+        platform: data.platform,
+        status: data.status,
+        shortDescription: data.shortDescription,
+        estimatedDuration: data.estimatedDuration,
+        startDate: data.startDate,
+        projectUrl: data.projectUrl || null,
+        deliveredDuration: data.deliveredDuration || null,
+        endDate: data.endDate || null,
+        proposedBudget: data.proposedBudget || null,
+        finalizedBudget: data.finalizedBudget || null,
+        tagline: data.tagline || null,
+        proposal: data.proposal || null,
+        features: data.features,
+        developers: data.developers,
+        screenshots: uploadedScreenshots,
+        video: uploadedVideo,
+      };
+
       const response = await fetch('/api/projects', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
       });
 
       const result = await response.json();
