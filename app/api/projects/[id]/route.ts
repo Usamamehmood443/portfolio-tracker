@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { generateProjectEmbedding } from '@/lib/embeddings';
 
 // GET /api/projects/[id] - Fetch single project
 export async function GET(
@@ -337,6 +338,33 @@ export async function PUT(
         video: true,
       },
     });
+
+    // Generate embedding for the updated project (async, non-blocking)
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const projectForEmbedding = {
+          projectTitle: project.projectTitle,
+          clientName: project.clientName,
+          shortDescription: project.shortDescription,
+          tagline: project.tagline,
+          proposal: project.proposal,
+          category: project.category,
+          platform: project.platform,
+          features: project.features.map((f) => f.feature.name),
+          developers: project.developers.map((d) => d.developer.name),
+        };
+
+        const { searchableText, embedding } = await generateProjectEmbedding(projectForEmbedding);
+
+        await prisma.project.update({
+          where: { id: project.id },
+          data: { searchableText, embedding },
+        });
+      } catch (embeddingError) {
+        // Log error but don't fail the request
+        console.error('Error generating embedding for updated project:', embeddingError);
+      }
+    }
 
     // Transform response
     const transformedProject = {

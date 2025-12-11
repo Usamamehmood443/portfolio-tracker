@@ -32,6 +32,10 @@ model Project {
   tagline           String?
   proposal          String?
 
+  // AI Search fields
+  embedding         String?   // Vector embedding stored as JSON string
+  searchableText    String?   // Concatenated searchable content
+
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

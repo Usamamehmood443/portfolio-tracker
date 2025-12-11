@@ -16,6 +16,7 @@ import {
 import { Search, Plus, Calendar, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { ProjectWithRelations } from "@/types";
+import IntelligentSearch from "@/components/intelligent-search";
 
 // Category color mapping for badges
 const categoryColors: Record<string, string> = {
@@ -177,6 +178,9 @@ export default function Home() {
             </Button>
           </Link>
         </div>
+
+        {/* AI-Powered Search */}
+        <IntelligentSearch />
 
         {/* Search and Filters */}
         <Card className="mb-8 shadow-sm">

@@ -53,6 +53,13 @@ Portfolio Tracker is a modern web application built with Next.js 14 that helps y
 - 🌙 Built-in theme support
 - 📱 Mobile-friendly design
 
+### AI-Powered Search (RAG)
+- 🤖 Intelligent semantic search using OpenAI embeddings
+- 📋 Paste client job posts to find matching portfolio projects
+- 🔄 Automatic embedding generation for new/updated projects
+- 📊 AI-generated analysis with match recommendations
+- 💡 Similarity scoring to rank project relevance
+
 ---
 
 ## 🛠️ Tech Stack
@@ -72,6 +79,7 @@ Portfolio Tracker is a modern web application built with Next.js 14 that helps y
 - **Prisma ORM** - Database toolkit
 - **PostgreSQL** - Production database (Supabase)
 - **SQLite** - Development database option
+- **OpenAI API** - Embeddings and chat completions for AI search
 
 ### Media Storage
 - **Hostinger FTP** - Cloud file storage
@@ -91,6 +99,7 @@ portfolio/
 ├── app/                          # Next.js app directory
 │   ├── api/                      # API routes
 │   │   ├── projects/            # Project CRUD operations
+│   │   ├── search/              # AI-powered semantic search
 │   │   ├── upload/              # File upload endpoint
 │   │   ├── categories/          # Category management
 │   │   ├── platforms/           # Platform management
@@ -106,10 +115,14 @@ portfolio/
 │   ├── page.tsx                # Home page (project list)
 │   └── globals.css             # Global styles
 ├── components/                  # Reusable components
-│   └── ui/                     # UI components from shadcn
+│   ├── ui/                     # UI components from shadcn
+│   └── intelligent-search.tsx  # AI-powered search component
 ├── lib/                        # Utility functions
 │   ├── prisma.ts              # Prisma client instance
-│   └── ftp-upload.ts          # FTP upload utilities
+│   ├── ftp-upload.ts          # FTP upload utilities
+│   └── embeddings.ts          # OpenAI embedding utilities
+├── scripts/                    # Utility scripts
+│   └── generate-embeddings.ts # Generate embeddings for existing projects
 ├── prisma/                     # Database configuration
 │   ├── schema.prisma          # Database schema
 │   ├── seed.js                # Database seeding script
@@ -316,6 +329,52 @@ All API routes return JSON responses.
 - `GET /api/features`
 - `GET /api/developers`
 
+### Search API (AI-Powered)
+
+- `POST /api/search` - Semantic search for projects
+  - Body: `{ query: string }` - Natural language query or job post
+  - Returns: `{ success, analysis, projects, count, similarityScores }`
+  - Requires: `OPENAI_API_KEY` environment variable
+
+---
+
+## 🤖 AI-Powered Search
+
+The portfolio includes an AI-powered semantic search feature that helps match client job posts with relevant portfolio projects.
+
+### Setup
+
+1. **Get an OpenAI API key** from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
+2. **Add to environment variables**:
+   ```env
+   OPENAI_API_KEY=sk-your_api_key_here
+   ```
+
+3. **Generate embeddings for existing projects**:
+   ```bash
+   npx tsx scripts/generate-embeddings.ts
+   ```
+
+### How It Works
+
+1. **Embedding Generation**: Each project's content (title, description, features, etc.) is converted to a vector embedding using OpenAI's `text-embedding-3-small` model.
+
+2. **Semantic Search**: When you search, your query is also converted to an embedding, and cosine similarity is calculated against all project embeddings.
+
+3. **AI Analysis**: GPT-4o-mini analyzes the top matches and provides recommendations explaining why each project is relevant.
+
+### Usage
+
+1. Expand the "AI-Powered Search" section on the home page
+2. Paste a client job post or describe project requirements
+3. Click "Search Portfolio" or press `Ctrl+Enter`
+4. Review AI analysis and matching projects with similarity scores
+
+### Auto-Indexing
+
+New projects and project updates automatically generate embeddings when the `OPENAI_API_KEY` is configured.
+
 ---
 
 ## 🚀 Deployment
@@ -344,6 +403,7 @@ All API routes return JSON responses.
 | `FTP_REMOTE_PATH` | `/public_html/portfolio-tracker` |
 | `NEXT_PUBLIC_MEDIA_URL` | `https://portfolio-tracker.domain.com` |
 | `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` |
+| `OPENAI_API_KEY` | `sk-...` (optional, for AI search) |
 
 ---
 
