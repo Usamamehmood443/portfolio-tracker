@@ -191,12 +191,26 @@ export default function EditProjectPage({ params }: PageProps) {
           developersRes.json(),
         ]);
 
-        if (sources.success) setProjectSources(sources.data.map((s: any) => s.name).filter(Boolean));
-        if (categories.success) setCategories(categories.data.map((c: any) => c.name).filter(Boolean));
-        if (platforms.success) setPlatforms(platforms.data.map((p: any) => p.name).filter(Boolean));
-        if (statuses.success) setStatuses(statuses.data.map((s: any) => s.name).filter(Boolean));
-        if (features.success) setFeatureSuggestions(features.data.map((f: any) => f.name).filter(Boolean));
-        if (developers.success) setDeveloperSuggestions(developers.data.map((d: any) => d.name).filter(Boolean));
+        // API returns string arrays directly, not objects with name property
+        // Use defaults as fallback if API returns empty or fails
+        if (sources.success && sources.data.length > 0) {
+          setProjectSources(sources.data.filter(Boolean));
+        }
+        if (categories.success && categories.data.length > 0) {
+          setCategories(categories.data.filter(Boolean));
+        }
+        if (platforms.success && platforms.data.length > 0) {
+          setPlatforms(platforms.data.filter(Boolean));
+        }
+        if (statuses.success && statuses.data.length > 0) {
+          setStatuses(statuses.data.filter(Boolean));
+        }
+        if (features.success && features.data.length > 0) {
+          setFeatureSuggestions(features.data.filter(Boolean));
+        }
+        if (developers.success && developers.data.length > 0) {
+          setDeveloperSuggestions(developers.data.filter(Boolean));
+        }
 
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -318,7 +332,7 @@ export default function EditProjectPage({ params }: PageProps) {
 
   // Handle adding new feature
   const handleFeatureChange = (features: string[]) => {
-    form.setValue("features", features);
+    form.setValue("features", features, { shouldValidate: true, shouldDirty: true });
     features.forEach(feature => {
       if (!featureSuggestions.includes(feature)) {
         setFeatureSuggestions(prev => [...prev, feature]);
@@ -328,7 +342,7 @@ export default function EditProjectPage({ params }: PageProps) {
 
   // Handle adding new developer
   const handleDeveloperChange = (developers: string[]) => {
-    form.setValue("developers", developers);
+    form.setValue("developers", developers, { shouldValidate: true, shouldDirty: true });
     developers.forEach(dev => {
       if (!developerSuggestions.includes(dev)) {
         setDeveloperSuggestions(prev => [...prev, dev]);

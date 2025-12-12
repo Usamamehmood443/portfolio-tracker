@@ -155,28 +155,27 @@ export default function NewProjectPage() {
         });
 
         // API returns strings directly, not objects with name property
-        const newSources = sources.success ? sources.data.filter(Boolean) : [];
-        const newCategories = categories.success ? categories.data.filter(Boolean) : [];
-        const newPlatforms = platforms.success ? platforms.data.filter(Boolean) : [];
-        const newStatuses = statuses.success ? statuses.data.filter(Boolean) : [];
-        const newFeatures = features.success ? features.data.filter(Boolean) : [];
-        const newDevelopers = developers.success ? developers.data.filter(Boolean) : [];
+        // Only update if API returns data, otherwise keep defaults
+        if (sources.success && sources.data.length > 0) {
+          setProjectSources(sources.data.filter(Boolean));
+        }
+        if (categories.success && categories.data.length > 0) {
+          setCategories(categories.data.filter(Boolean));
+        }
+        if (platforms.success && platforms.data.length > 0) {
+          setPlatforms(platforms.data.filter(Boolean));
+        }
+        if (statuses.success && statuses.data.length > 0) {
+          setStatuses(statuses.data.filter(Boolean));
+        }
+        if (features.success && features.data.length > 0) {
+          setFeatureSuggestions(features.data.filter(Boolean));
+        }
+        if (developers.success && developers.data.length > 0) {
+          setDeveloperSuggestions(developers.data.filter(Boolean));
+        }
 
-        console.log('📝 Setting state with values:', {
-          sources: newSources,
-          categories: newCategories,
-          platforms: newPlatforms,
-          statuses: newStatuses,
-        });
-
-        setProjectSources(newSources);
-        setCategories(newCategories);
-        setPlatforms(newPlatforms);
-        setStatuses(newStatuses);
-        setFeatureSuggestions(newFeatures);
-        setDeveloperSuggestions(newDevelopers);
-
-        console.log('✅ State updated');
+        console.log('✅ Dropdown options loaded');
       } catch (err) {
         console.error('❌ Error fetching dropdown options:', err);
       } finally {
@@ -280,7 +279,7 @@ export default function NewProjectPage() {
 
   // Handle adding new feature
   const handleFeatureChange = (features: string[]) => {
-    form.setValue("features", features);
+    form.setValue("features", features, { shouldValidate: true, shouldDirty: true });
     // Add new features to suggestions
     features.forEach(feature => {
       if (!featureSuggestions.includes(feature)) {
@@ -291,7 +290,7 @@ export default function NewProjectPage() {
 
   // Handle adding new developer
   const handleDeveloperChange = (developers: string[]) => {
-    form.setValue("developers", developers);
+    form.setValue("developers", developers, { shouldValidate: true, shouldDirty: true });
     // Add new developers to suggestions
     developers.forEach(dev => {
       if (!developerSuggestions.includes(dev)) {
