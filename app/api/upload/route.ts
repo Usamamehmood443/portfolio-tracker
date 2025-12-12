@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadToFTP, generateUniqueFilename } from '@/lib/ftp-upload';
 
+// Route segment config for handling large file uploads
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow up to 60 seconds for upload
+
 export async function POST(request: NextRequest) {
   try {
     console.log('📤 Upload API called');
@@ -25,8 +30,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 10MB for screenshots, 50MB for videos)
-    const maxSize = type === 'screenshot' ? 10 * 1024 * 1024 : 50 * 1024 * 1024;
+    // Validate file size (max 10MB for screenshots, 100MB for videos)
+    const maxSize = type === 'screenshot' ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
         { success: false, error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` },
